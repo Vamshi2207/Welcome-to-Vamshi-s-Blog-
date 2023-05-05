@@ -1,0 +1,16 @@
+---
+title: "Vamshi Krishna Vallam"
+image: profile_Vamshi.jpg
+about: 
+  template: jolla
+  links: 
+    
+    - icon: linkedin
+      text: LinkedIn
+      href: https://linkedin.com/in/vamshi-krishna-97839816a
+    - icon: github
+      text: Github
+      href: https://github.com/Vamshi2207/Vamshi
+---
+
+Hi, my name is Vamshi and I am pursuing my Master's in Advanced Data Analytics. I am from India where I completed my Bachelor's in Electronics and Communication Engineering. To develop my skills in Data, I decided to pursue my Master's in this field. I worked as a Business Operations Specialist at Amazon for 2 years and as a Quality Analyst at Nvidia Graphics Ltd for 2.5 years.

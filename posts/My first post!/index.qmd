@@ -1,0 +1,246 @@
+---
+title: "Mini Project"
+author: "Vamshi Krishna Vallam"
+date: "2023-05-05"
+categories: [R, Regression, analysis]
+image: "image.jpg"
+---
+
+Hi, this is my Mini Project!
+
+```{r, echo=TRUE}
+library(dplyr)
+library(caret)
+library(ggplot2)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+```
+
+\# MINI PROJECT 2:
+
+As a group, you consult to a bank that is interested in understanding what drives loans made by the bank to default ("bad" status). You are provided with a data set that contains 4,455 observations and 14 variables, shown below:
+
+\*\*Target Variable\*\*
+
+\- \*\*Status:\*\* credit status (Good=1, Bad=2)
+
+\*\*Predictors\*\*
+
+\- \*\*Seniority\*\* job seniority (years)
+
+\- \*\*Home\*\* type of homeownership (1=rent, 2=owner, 3=priv, 4=ignore, 5=parents, 6=other)
+
+\- \*\*Time\*\* time of requested loan
+
+\- \*\*Age\*\* client's age
+
+\- \*\*Marital\*\* marital status (1=single, 2=married, 3=widow, 4=separated, 5=divorced)
+
+\- \*\*Records\*\* existence of records (1=no, 2=yes)
+
+\- \*\*Job\*\* type of job(1=fixed, 2=parttime, 3=freelance, 4=others)
+
+\- \*\*Expenses\*\* amount of expenses
+
+\- \*\*Income\*\* amount of income
+
+\- \*\*Assets\*\* amount of assets
+
+\- \*\*Debt\*\* amount of debt
+
+\- \*\*Amount\*\* amount requested of loan
+
+\- \*\*Price\*\* price of good
+
+This project is composed of three parts:
+
+\- Part 1\\\[20 points\\\]: Data Prep
+
+\- Part 2 \\\[45 points\\\]: Prediction with Decision Trees
+
+\- Part 3\\\[35 points\\\]: Prediction with Logistic Regression
+
+\## Read the data in R
+
+\`\`\`
+
+```{r,echo=TRUE}
+creditdata<-read.csv("MP2_data_option1.csv", header = TRUE)
+
+
+```
+
+\## PART 1: Data Preperation
+
+Your first task is to clean the data as instructed below. Normally, you would need to do a through quality check on the data but for this group project, we will focus more on the modelling part. In real life, before modelling your data, you would need to take a deeper look at the shape and structure of your data set. Things like identifying errors, checking the distributions of your variables, checking for need for data transformation, should be always in your checklist before modeling your data.
+
+\#### Task 1A: Data preparation
+
+There were some data entry errors:
+
+\- \*\*Status\*\* variable was coded 0 for certain individuals. Drop rows from \*\*creditdata\*\* when \*\*Status\*\* variable takes the value of 0.
+
+\- \*\*Marital\*\* variable was coded 0 for certain individuals. Drop rows from \*\*creditdata\*\* when \*\*Marital\*\* variable takes the value of 0.
+
+\- \*\*Job\*\* variable was coded 0 for certain individuals. Drop rows from \*\*creditdata\*\* when \*\*Job\*\* variable takes the value of 0.
+
+\- For some variables, the missing values were coded with 99999999 to indicate that the observation is missing. Drop rows from \*\*creditdata\*\* when \*\*Income, Assets,\*\* or \*\*Debt\*\* variable takes the value of 99999999. You can use subset function for this task.
+
+\- Declare the following variables as factor: \*\*Status, Home, Marital, Records\*\*, and \*\*Job\*\*.
+
+\- Label \*\*Status\*\* variable as "\*Good" and "Bad"\*
+
+\- If you end up with 4375 rows, then you are on the right track.
+
+```{r, echo=TRUE}
+# drop rows with missing or invalid values
+
+creditdata <- creditdata %>%
+
+  filter(Status != 0, Marital != 0, Job != 0, Income != 99999999, Assets != 99999999, Debt != 99999999)
+
+# convert selected variables to factors
+
+creditdata$Status <- factor(creditdata$Status, labels = c("Bad", "Good"))
+
+creditdata$Home <- factor(creditdata$Home)
+
+creditdata$Marital <- factor(creditdata$Marital)
+
+creditdata$Records <- factor(creditdata$Records)
+
+creditdata$Job <- factor(creditdata$Job)
+
+nrow(creditdata)
+```
+
+\# Task 1B: Split your data
+
+By using \*\*createDataPartition\*\* function in \*\*caret\*\* package, split the \*\*creditdata\*\* by holding 75% of the data in \*\*train_data\*\*, and the rest in \*\*test_data\*\*. Use \*\*set.seed(5410)\*\* when you do the split .
+
+```{r, echo=TRUE}
+set.seed(5410) 
+
+# split the data into training and test sets
+
+trainIndex <- createDataPartition(creditdata$Status, p = 0.75, list = FALSE)
+
+train_data <- creditdata[trainIndex, ]
+
+test_data <- creditdata[-trainIndex, ]
+```
+
+\## Part 2: Classification Tree and Ensemble Model
+
+\### Task 2A: Training with Classication Tree
+
+First, you will use a classification tree to predict \*\*Status\*\* in \*\*train_data\*\* with all the predictors in our data set. Use \*\*rpart\*\* function in \*\*rpart\*\* package to build a decision tree to estimate \*\*Status\*\* by using the \*\*train_data\*\* and name your model as \*\*model_tree\*\*. Since we construct classification tree, you need to use \*method="class"\* in \*\*rpart\*\* function.
+
+Use the following parameters in \*\*model_tree\*\* (Hint: use \*\*rpart.control\*\* in \*\*rpart\*\* function).
+
+\- use 10-fold cross validation (\*\*xval=10\*\*)
+
+\- use complexity parameter of 0.001 (\*\*cp=0.001\*\*)
+
+\- use at least 3 observations in each terminal node (\*\*minbucket=3\*\*)
+
+\- Based on \*\*model_tree\*\* results, which three variables contribute most to classify \*\*Status\*\* in the \*\*train_data\*\*?
+
+```{r, echo=TRUE}
+# Insert your codes for Task 2A  below
+
+library(rpart)
+
+# build classification tree with rpart
+
+model_tree <- rpart(Status ~ ., data = train_data, method = "class",
+
+                    control = rpart.control(cp = 0.001, minsplit = 3, xval = 10))
+
+# Summary of the decision tree model
+
+summary(model_tree)
+
+# Important variables in the model_tree
+
+var_imp <- varImp(model_tree)
+
+var_imp_sorted <- var_imp[order(var_imp$Overall, decreasing = TRUE), ]
+
+head(var_imp_sorted, n = 3)
+
+var_imp
+```
+
+\### Based on the Decision Tree results the three variables that contribute most to classify Status in the train_data are Income, Price, and Amount.
+
+\### TASK 2B: Predict Status in the test data
+
+\- By using \*\*model_tree\*\*, predict \*\*Status\*\* labels in \*\*test_data\*\* and store them as \*\*predict_model_tree\*\*. You can use \*\*predict()\*\* function for this task and select \*\*type="class"\*\* to retrieve labels. We define Good credit status as \*positive class\* (when Status=1) and Bad credit status as \*Negative class\* (when Status=2).
+
+\- Now, we need the performance measures to compare \*\*model_tree\*\* with the models you will create in the following sections. By using the actual and predicted Status labels in \*\*test_data\*\*, do the followings:
+
+1\. Calculate accuracy and name it as accuracy_model_tree
+
+2\. Calculate precision and name it as precision_model_tree
+
+3\. Calculate sensitivity and name it as sensitivity_model_tree
+
+4\. Calculate specificity and name it as specificity_model_tree
+
+```{r, echo=TRUE}
+# Predict Status labels in test_data using model_tree
+
+predict_model_tree <- predict(model_tree, newdata = test_data, type = "class")
+
+# Create a confusion matrix
+
+conf_matrix_tree <- table(test_data$Status, predict_model_tree)
+
+conf_matrix_tree
+
+# Calculate accuracy
+
+accuracy_model_tree <- sum(diag(conf_matrix_tree))/sum(conf_matrix_tree)
+
+accuracy_model_tree
+
+# Calculate precision
+
+precision_model_tree <- conf_matrix_tree[1,1]/sum(conf_matrix_tree[,1])
+
+precision_model_tree
+
+# Calculate sensitivity
+
+sensitivity_model_tree <- conf_matrix_tree[1,1]/sum(conf_matrix_tree[1,])
+
+sensitivity_model_tree
+
+# Calculate specificity
+
+specificity_model_tree <- conf_matrix_tree[2,2]/sum(conf_matrix_tree[2,])
+
+specificity_model_tree
+
+
+```
+
+```{}
+```
+
+```{}
+```
+
+```{}
+```
+
+```{}
+```
+
+```{}
+```
+
+```{}
+```
